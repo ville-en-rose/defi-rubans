@@ -153,11 +153,6 @@
       color: #b3261e;
     }
 
-    .points {
-      font-size: 22px;
-      margin-top: 15px;
-    }
-
     .loading {
       color: #555;
     }
@@ -523,12 +518,7 @@
 
           resultElement.innerHTML =
             '✅ ' +
-            escapeHtml(response.message) +
-            '<div class="points">' +
-            '+' +
-            Number(response.points || 0) +
-            ' point(s)' +
-            '</div>';
+            escapeHtml(response.message);
 
           buttonElement.style.display =
             'none';
