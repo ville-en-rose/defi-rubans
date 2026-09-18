@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+
+  <title>Défi La Ville en Rose</title>
+
+  <style>
+
+    /* =========================
+       MISE EN PAGE GÉNÉRALE
+       ========================= */
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f7f5;
+      color: #222;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 30px 25px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+
+    /* =========================
+       INTRODUCTION
+       ========================= */
+
+    .intro {
+      line-height: 1.6;
+    }
+
+    .intro .title {
+      color: #176b4d;
+      font-size: 28px;
+      font-weight: bold;
+      margin: 0 0 20px;
+    }
+
+    .intro p {
+      margin: 0 0 18px;
+    }
+
+
+    /* =========================
+       ENCADRÉ "LE SAVIEZ-VOUS ?"
+       ========================= */
+
+    .message {
+      background: #eef8f2;
+      border-left: 5px solid #176b4d;
+      padding: 20px;
+      margin: 30px 0;
+      border-radius: 8px;
+      line-height: 1.6;
+    }
+
+    .message h2 {
+      margin: 0 0 15px;
+      color: #176b4d;
+      font-size: 21px;
+    }
+
+    .message p {
+      margin: 0;
+    }
+
+
+    /* =========================
+       FORMULAIRE
+       ========================= */
+
+    .form-title {
+      margin: 0 0 15px;
+      line-height: 1.5;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 14px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #176b4d;
+      box-shadow: 0 0 0 2px rgba(23, 107, 77, 0.15);
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 8px;
+      background: #176b4d;
+      color: #ffffff;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #12583e;
+    }
+
+    button:disabled {
+      background: #999999;
+      cursor: not-allowed;
+    }
+
+
+    /* =========================
+       MESSAGE DE RÉSULTAT
+       ========================= */
+
+    #result {
+      margin-top: 20px;
+      font-weight: bold;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .success {
+      color: #176b4d;
+    }
+
+    .error {
+      color: #b3261e;
+    }
+
+    .points {
+      font-size: 22px;
+      margin-top: 15px;
+    }
+
+    .loading {
+      color: #555;
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+  <div class="container">
+
+    <div class="card">
+
+      <!-- =====================
+           INTRODUCTION
+           ===================== -->
+
+      <div class="intro">
+
+        <p class="title">
+          🎀 Bravo !
+        </p>
+
+        <p class="form-title">
+          <strong>
+            Vous avez trouvé un ruban rose.
+          </strong>
+        </p>
+
+        <p>
+          Dans le cadre d'Octobre Rose, la Ville de L'Île-Saint-Denis organise une chasse aux rubans roses du jeudi 1er au dimanche 18 octobre 2026. Les gagnants sont ceux qui trouveront le plus de rubans roses, le plus rapidement possible. Les trois premiers remporteront des lots qui seront remis lors de la soirée de clôture, le vendredi 23 octobre 2026 à partir de 19h à la MIC.
+        </p>
+
+        <p class="form-title">
+          <strong>
+            N'oubliez pas de valider votre découverte en vous rendant en bas de cette page.
+          </strong>
+        </p>
+
+      </div>
+
+
+      <!-- =====================
+           MESSAGE DE PRÉVENTION
+           ===================== -->
+
+      <div class="message">
+
+        <h2>
+          Le saviez-vous ?
+        </h2>
+
+        <p id="message-prevention">
+          Chargement...
+        </p>
+
+      </div>
+
+
+      <!-- =====================
+           FORMULAIRE
+           ===================== -->
+
+      <p class="form-title">
+        <strong>
+          Entrez votre adresse e-mail pour valider ce QR code.
+        </strong>
+      </p>
+
+      <label for="email">
+        Votre adresse e-mail
+      </label>
+
+      <input
+        type="email"
+        id="email"
+        placeholder="exemple@email.com"
+        autocomplete="email"
+      >
+
+      <button
+        id="button"
+        onclick="valider()"
+        disabled
+      >
+        Chargement...
+      </button>
+
+      <div id="result"></div>
+
+    </div>
+
+  </div>
+
+
+  <script>
+
+    // ============================================================
+    // CONFIGURATION SUPABASE
+    // ============================================================
+
+    const SUPABASE_URL =
+      'https://pzgfftwkmwzphfbgheki.supabase.co';
+
+    const SUPABASE_PUBLISHABLE_KEY =
+      'sb_publishable_mNvTx8jv3fNJLZrYuu8dPw_Dwu5sgqa';
+
+
+    // ============================================================
+    // RÉCUPÉRATION DU TOKEN DANS L'URL
+    // ============================================================
+
+    const params = new URLSearchParams(window.location.search);
+
+    const QR_TOKEN =
+      (params.get('qr') || '').trim();
+
+
+    // ============================================================
+    // ÉLÉMENTS DE LA PAGE
+    // ============================================================
+
+    const messageElement =
+      document.getElementById('message-prevention');
+
+    const emailElement =
+      document.getElementById('email');
+
+    const buttonElement =
+      document.getElementById('button');
+
+    const resultElement =
+      document.getElementById('result');
+
+
+    // ============================================================
+    // APPEL SUPABASE
+    // ============================================================
+
+    async function appelerSupabase(fonction, donnees) {
+
+      const response = await fetch(
+        SUPABASE_URL + '/rest/v1/rpc/' + fonction,
+        {
+          method: 'POST',
+
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_PUBLISHABLE_KEY,
+            'Authorization':
+              'Bearer ' + SUPABASE_PUBLISHABLE_KEY
+          },
+
+          body: JSON.stringify(donnees)
+        }
+      );
+
+      if (!response.ok) {
+
+        let erreur = '';
+
+        try {
+          erreur = await response.text();
+        } catch (e) {
+          erreur = '';
+        }
+
+        console.error(
+          'Erreur Supabase :',
+          response.status,
+          erreur
+        );
+
+        throw new Error(
+          'Erreur lors de la communication avec le serveur.'
+        );
+      }
+
+      return await response.json();
+    }
+
+
+    // ============================================================
+    // CHARGEMENT DU QR
+    // ============================================================
+
+    async function chargerQR() {
+
+      // Aucun QR dans l'URL
+      if (!QR_TOKEN) {
+
+        messageElement.innerText =
+          'QR code non identifié.';
+
+        resultElement.className = 'error';
+
+        resultElement.innerText =
+          'QR code non identifié.';
+
+        buttonElement.disabled = true;
+
+        buttonElement.innerText =
+          'QR code non identifié';
+
+        return;
+      }
+
+
+      try {
+
+        const resultat =
+          await appelerSupabase(
+            'get_qr_by_token',
+            {
+              p_token: QR_TOKEN
+            }
+          );
+
+
+        // Aucun QR trouvé
+        if (!resultat || resultat.length === 0) {
+
+          messageElement.innerText =
+            'QR code inconnu.';
+
+          resultElement.className =
+            'error';
+
+          resultElement.innerText =
+            '⚠️ Ce QR code n’existe pas ou n’est plus actif.';
+
+          buttonElement.disabled = true;
+
+          buttonElement.innerText =
+            'QR code indisponible';
+
+          return;
+        }
+
+
+        const qr =
+          resultat[0];
+
+
+        // Message de prévention
+        messageElement.innerText =
+          qr.message_prevention || '';
+
+
+        // Le formulaire peut maintenant être utilisé
+        buttonElement.disabled = false;
+
+        buttonElement.innerText =
+          'Valider';
+
+      }
+
+
+      catch (error) {
+
+        console.error(error);
+
+        messageElement.innerText =
+          'Impossible de charger les informations de ce QR code.';
+
+        resultElement.className =
+          'error';
+
+        resultElement.innerText =
+          '⚠️ Une erreur est survenue. Merci de réessayer.';
+
+        buttonElement.disabled = true;
+
+        buttonElement.innerText =
+          'Erreur de chargement';
+      }
+    }
+
+
+    // ============================================================
+    // VALIDATION DU QR
+    // ============================================================
+
+    async function valider() {
+
+      const email =
+        emailElement.value.trim().toLowerCase();
+
+
+      // ----------------------------------------------------------
+      // Vérification de l'adresse e-mail
+      // ----------------------------------------------------------
+
+      if (
+        !email ||
+        !email.includes('@')
+      ) {
+
+        resultElement.className =
+          'error';
+
+        resultElement.innerText =
+          'Merci de renseigner une adresse e-mail valide.';
+
+        return;
+      }
+
+
+      // ----------------------------------------------------------
+      // Vérification du QR
+      // ----------------------------------------------------------
+
+      if (!QR_TOKEN) {
+
+        resultElement.className =
+          'error';
+
+        resultElement.innerText =
+          'QR code non identifié.';
+
+        return;
+      }
+
+
+      // ----------------------------------------------------------
+      // Désactivation du bouton
+      // ----------------------------------------------------------
+
+      buttonElement.disabled = true;
+
+      buttonElement.innerText =
+        'Validation en cours...';
+
+      resultElement.className =
+        'loading';
+
+      resultElement.innerText =
+        '';
+
+
+      try {
+
+        const response =
+          await appelerSupabase(
+            'valider_qr',
+            {
+              p_token: QR_TOKEN,
+              p_email: email
+            }
+          );
+
+
+        // --------------------------------------------------------
+        // Validation réussie
+        // --------------------------------------------------------
+
+        if (response.success) {
+
+          resultElement.className =
+            'success';
+
+          resultElement.innerHTML =
+            '✅ ' +
+            escapeHtml(response.message) +
+            '<div class="points">' +
+            '+' +
+            Number(response.points || 0) +
+            ' point(s)' +
+            '</div>';
+
+          buttonElement.style.display =
+            'none';
+
+          emailElement.style.display =
+            'none';
+
+        }
+
+
+        // --------------------------------------------------------
+        // QR déjà validé
+        // --------------------------------------------------------
+
+        else if (response.alreadyValidated) {
+
+          resultElement.className =
+            'error';
+
+          resultElement.innerText =
+            '⚠️ ' + response.message;
+
+          buttonElement.disabled =
+            false;
+
+          buttonElement.innerText =
+            'Valider';
+
+        }
+
+
+        // --------------------------------------------------------
+        // Autre erreur
+        // --------------------------------------------------------
+
+        else {
+
+          resultElement.className =
+            'error';
+
+          resultElement.innerText =
+            '⚠️ ' + response.message;
+
+          buttonElement.disabled =
+            false;
+
+          buttonElement.innerText =
+            'Valider';
+        }
+
+      }
+
+
+      catch (error) {
+
+        console.error(error);
+
+        resultElement.className =
+          'error';
+
+        resultElement.innerText =
+          'Une erreur est survenue. Merci de réessayer.';
+
+        buttonElement.disabled =
+          false;
+
+        buttonElement.innerText =
+          'Valider';
+      }
+
+    }
+
+
+    // ============================================================
+    // PROTECTION POUR L'AFFICHAGE DU TEXTE
+    // ============================================================
+
+    function escapeHtml(text) {
+
+      const div =
+        document.createElement('div');
+
+      div.textContent =
+        String(text || '');
+
+      return div.innerHTML;
+    }
+
+
+    // ============================================================
+    // LANCEMENT
+    // ============================================================
+
+    chargerQR();
+
+  </script>
+
+</body>
+
+</html>
