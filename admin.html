@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Administration — Défi La Ville en Rose</title>
+
+<style>
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f7f5;
+  color: #222;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 25px 15px;
+}
+
+.card {
+  background: white;
+  border-radius: 18px;
+  padding: 25px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.08);
+}
+
+h1 {
+  margin-top: 0;
+}
+
+h2 {
+  margin-top: 0;
+}
+
+input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  margin: 7px 0 15px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+button {
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 16px;
+  cursor: pointer;
+  background: #198754;
+  color: white;
+}
+
+button.secondary {
+  background: #666;
+}
+
+button.danger {
+  background: #b02a37;
+}
+
+.message {
+  margin-top: 15px;
+  padding: 12px;
+  border-radius: 10px;
+  display: none;
+}
+
+.error {
+  background: #f8d7da;
+  color: #842029;
+}
+
+.success {
+  background: #d1e7dd;
+  color: #0f5132;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.stat {
+  background: #f4f7f5;
+  border-radius: 14px;
+  padding: 18px;
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 30px;
+  font-weight: bold;
+}
+
+.stat-label {
+  margin-top: 5px;
+  color: #666;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 11px 9px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+  white-space: nowrap;
+}
+
+th {
+  background: #f4f7f5;
+}
+
+.rank {
+  font-weight: bold;
+  text-align: center;
+}
+
+.hidden {
+  display: none;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 700px) {
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- CONNEXION -->
+
+  <div id="login-card" class="card">
+
+    <h1>🎀 Administration</h1>
+
+    <p>
+      Défi La Ville en Rose — espace organisateur
+    </p>
+
+    <label for="email">Adresse e-mail</label>
+    <input
+      type="email"
+      id="email"
+      autocomplete="username"
+      placeholder="Votre adresse e-mail"
+    >
+
+    <label for="password">Mot de passe</label>
+    <input
+      type="password"
+      id="password"
+      autocomplete="current-password"
+      placeholder="Votre mot de passe"
+    >
+
+    <button id="login-button" onclick="connexion()">
+      Se connecter
+    </button>
+
+    <div id="login-message" class="message"></div>
+
+  </div>
+
+
+  <!-- ADMIN -->
+
+  <div id="admin-content" class="hidden">
+
+    <div class="topbar">
+
+      <div>
+        <h1>🎀 Défi La Ville en Rose</h1>
+        <div id="connected-email"></div>
+      </div>
+
+      <button class="secondary" onclick="deconnexion()">
+        Se déconnecter
+      </button>
+
+    </div>
+
+
+    <!-- STATISTIQUES -->
+
+    <div class="card">
+
+      <h2>📊 Vue d'ensemble</h2>
+
+      <div class="stats">
+
+        <div class="stat">
+          <div id="stat-participants" class="stat-number">0</div>
+          <div class="stat-label">Participants</div>
+        </div>
+
+        <div class="stat">
+          <div id="stat-decouvertes" class="stat-number">0</div>
+          <div class="stat-label">Découvertes</div>
+        </div>
+
+        <div class="stat">
+          <div id="stat-qr" class="stat-number">0 / 30</div>
+          <div class="stat-label">QR différents trouvés</div>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- CLASSEMENT -->
+
+    <div class="card">
+
+      <h2>🏆 Classement</h2>
+
+      <div class="table-wrapper">
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>Rang</th>
+              <th>E-mail</th>
+              <th>QR trouvés</th>
+              <th>Dernier QR</th>
+            </tr>
+          </thead>
+
+          <tbody id="classement-body">
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+
+    <!-- DETAIL -->
+
+    <div class="card">
+
+      <h2>📋 Détail des découvertes</h2>
+
+      <div class="table-wrapper">
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>QR n°</th>
+              <th>E-mail</th>
+              <th>Date / heure</th>
+              <th>Points</th>
+            </tr>
+          </thead>
+
+          <tbody id="detail-body">
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+    <div id="admin-message" class="message"></div>
+
+  </div>
+
+</div>
+
+
+<script>
+
+const SUPABASE_URL =
+  'https://pzgfftwkmwzphfbgheki.supabase.co';
+
+const SUPABASE_PUBLISHABLE_KEY =
+  'sb_publishable_mNvTx8jv3fNJLZrYuu8dPw_Dwu5sgqa';
+
+
+async function supabaseRequest(path, options = {}) {
+
+  const response = await fetch(
+    SUPABASE_URL + path,
+    {
+      ...options,
+
+      headers: {
+        'Content-Type': 'application/json',
+
+        'apikey': SUPABASE_PUBLISHABLE_KEY,
+
+        ...options.headers
+      }
+    }
+  );
+
+  const text = await response.text();
+
+  let data = null;
+
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = text;
+  }
+
+  if (!response.ok) {
+
+    throw new Error(
+      data?.message ||
+      data?.msg ||
+      text ||
+      'Erreur Supabase'
+    );
+  }
+
+  return data;
+}
+
+
+/* =========================
+   CONNEXION
+========================= */
+
+async function connexion() {
+
+  const email =
+    document.getElementById('email').value.trim();
+
+  const password =
+    document.getElementById('password').value;
+
+  const message =
+    document.getElementById('login-message');
+
+  if (!email || !password) {
+
+    afficherMessage(
+      message,
+      'Merci de renseigner votre e-mail et votre mot de passe.',
+      true
+    );
+
+    return;
+  }
+
+  const button =
+    document.getElementById('login-button');
+
+  button.disabled = true;
+  button.innerText = 'Connexion...';
+
+  try {
+
+    const data = await supabaseRequest(
+      '/auth/v1/token?grant_type=password',
+      {
+        method: 'POST',
+
+        headers: {
+          'Authorization':
+            'Bearer ' + SUPABASE_PUBLISHABLE_KEY
+        },
+
+        body: JSON.stringify({
+          email: email,
+          password: password
+        })
+      }
+    );
+
+    localStorage.setItem(
+      'supabase_access_token',
+      data.access_token
+    );
+
+    localStorage.setItem(
+      'supabase_refresh_token',
+      data.refresh_token
+    );
+
+    localStorage.setItem(
+      'supabase_user_email',
+      email
+    );
+
+    afficherAdmin();
+
+  } catch (error) {
+
+    afficherMessage(
+      message,
+      'Connexion impossible. Vérifiez votre e-mail et votre mot de passe.',
+      true
+    );
+
+  } finally {
+
+    button.disabled = false;
+    button.innerText = 'Se connecter';
+  }
+}
+
+
+/* =========================
+   AFFICHAGE ADMIN
+========================= */
+
+function afficherAdmin() {
+
+  document
+    .getElementById('login-card')
+    .classList.add('hidden');
+
+  document
+    .getElementById('admin-content')
+    .classList.remove('hidden');
+
+  document
+    .getElementById('connected-email')
+    .innerText =
+      localStorage.getItem('supabase_user_email') || '';
+
+  chargerDonnees();
+}
+
+
+/* =========================
+   CHARGEMENT DES DONNÉES
+========================= */
+
+async function appelerFonction(nom) {
+
+  const token =
+    localStorage.getItem('supabase_access_token');
+
+  if (!token) {
+    throw new Error('Session expirée.');
+  }
+
+  return await supabaseRequest(
+    '/rest/v1/rpc/' + nom,
+    {
+      method: 'POST',
+
+      headers: {
+        'Authorization':
+          'Bearer ' + token
+      },
+
+      body: '{}'
+    }
+  );
+}
+
+
+async function chargerDonnees() {
+
+  const message =
+    document.getElementById('admin-message');
+
+  try {
+
+    const [classement, detail] =
+      await Promise.all([
+        appelerFonction('admin_classement'),
+        appelerFonction('admin_detail_decouvertes')
+      ]);
+
+    afficherClassement(classement || []);
+
+    afficherDetail(detail || []);
+
+  } catch (error) {
+
+    afficherMessage(
+      message,
+      'Impossible de charger les données : ' +
+      error.message,
+      true
+    );
+
+  }
+}
+
+
+/* =========================
+   CLASSEMENT
+========================= */
+
+function afficherClassement(data) {
+
+  const body =
+    document.getElementById('classement-body');
+
+  body.innerHTML = '';
+
+  data.forEach((participant, index) => {
+
+    const row =
+      document.createElement('tr');
+
+    const rank =
+      document.createElement('td');
+
+    rank.className = 'rank';
+    rank.innerText = index + 1;
+
+    const email =
+      document.createElement('td');
+
+    email.innerText =
+      participant.email || '';
+
+    const qr =
+      document.createElement('td');
+
+    qr.innerText =
+      participant.qr_trouves || 0;
+
+    const date =
+      document.createElement('td');
+
+    date.innerText =
+      formaterDate(participant.dernier_qr);
+
+    row.appendChild(rank);
+    row.appendChild(email);
+    row.appendChild(qr);
+    row.appendChild(date);
+
+    body.appendChild(row);
+  });
+
+
+  document.getElementById(
+    'stat-participants'
+  ).innerText = data.length;
+
+
+  let total =
+    0;
+
+  data.forEach(p => {
+    total += Number(p.qr_trouves || 0);
+  });
+
+  document.getElementById(
+    'stat-decouvertes'
+  ).innerText = total;
+
+
+  const maxQr =
+    data.length
+      ? Math.max(
+          ...data.map(
+            p => Number(p.qr_trouves || 0)
+          )
+        )
+      : 0;
+
+  document.getElementById(
+    'stat-qr'
+  ).innerText =
+    maxQr + ' / 30';
+}
+
+
+/* =========================
+   DETAIL
+========================= */
+
+function afficherDetail(data) {
+
+  const body =
+    document.getElementById('detail-body');
+
+  body.innerHTML = '';
+
+  data.forEach(item => {
+
+    const row =
+      document.createElement('tr');
+
+    const qr =
+      document.createElement('td');
+
+    qr.innerText =
+      'QR n°' + item.qr_numero;
+
+    const email =
+      document.createElement('td');
+
+    email.innerText =
+      item.email || '';
+
+    const date =
+      document.createElement('td');
+
+    date.innerText =
+      formaterDate(item.date_heure);
+
+    const points =
+      document.createElement('td');
+
+    points.innerText =
+      item.points || 0;
+
+    row.appendChild(qr);
+    row.appendChild(email);
+    row.appendChild(date);
+    row.appendChild(points);
+
+    body.appendChild(row);
+  });
+}
+
+
+/* =========================
+   DATES
+========================= */
+
+function formaterDate(date) {
+
+  if (!date) {
+    return '';
+  }
+
+  return new Date(date).toLocaleString(
+    'fr-FR',
+    {
+      dateStyle: 'short',
+      timeStyle: 'medium'
+    }
+  );
+}
+
+
+/* =========================
+   DÉCONNEXION
+========================= */
+
+function deconnexion() {
+
+  localStorage.removeItem(
+    'supabase_access_token'
+  );
+
+  localStorage.removeItem(
+    'supabase_refresh_token'
+  );
+
+  localStorage.removeItem(
+    'supabase_user_email'
+  );
+
+  location.reload();
+}
+
+
+/* =========================
+   MESSAGES
+========================= */
+
+function afficherMessage(
+  element,
+  texte,
+  erreur = false
+) {
+
+  element.innerText = texte;
+
+  element.className =
+    'message ' +
+    (erreur ? 'error' : 'success');
+
+  element.style.display = 'block';
+}
+
+
+/* =========================
+   SESSION EXISTANTE
+========================= */
+
+if (
+  localStorage.getItem(
+    'supabase_access_token'
+  )
+) {
+
+  afficherAdmin();
+}
+
+</script>
+
+</body>
+</html>
